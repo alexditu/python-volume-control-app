@@ -17,7 +17,7 @@ class VolumeController:
         self.pulse = None
         self._lock = threading.Lock()
         self.connect()
-    
+
     def connect(self):
         """Connect to PulseAudio server"""
         try:
@@ -27,28 +27,28 @@ class VolumeController:
         except Exception as e:
             print(f"Failed to connect to PulseAudio: {e}")
             self.pulse = None
-    
+
     def get_default_sink(self):
         """Get the default sink (main audio output)"""
         with self._lock:
             try:
                 if not self.pulse:
                     self.connect()
-                
+
                 server_info = self.pulse.server_info()
                 default_sink_name = server_info.default_sink_name
-                
+
                 sinks = self.pulse.sink_list()
                 for sink in sinks:
                     if sink.name == default_sink_name:
                         return sink
-                
+
                 # Fallback to first sink if default not found
                 return sinks[0] if sinks else None
             except Exception as e:
                 print(f"Error getting default sink: {e}")
                 return None
-    
+
     def get_current_volume(self):
         """Get current volume level and mute status"""
         try:
@@ -60,10 +60,10 @@ class VolumeController:
                     'status': 'error',
                     'error': 'No audio sink found'
                 }
-            
+
             # Convert volume to percentage (PulseAudio uses 0.0-1.0, we want 0-100)
             volume_percent = int(sink.volume.value_flat * 100)
-            
+
             return {
                 'volume': volume_percent,
                 'is_muted': bool(sink.mute),
@@ -77,28 +77,28 @@ class VolumeController:
                 'status': 'error',
                 'error': f'Failed to get volume: {str(e)}'
             }
-    
+
     def set_volume(self, volume_percent):
         """Set volume to specific percentage"""
         try:
             sink = self.get_default_sink()
             if not sink:
                 return False
-            
+
             # Clamp volume between 0 and 100
             volume_percent = max(0, min(100, volume_percent))
-            
+
             # Convert percentage to PulseAudio volume (0.0-1.0)
             volume_float = volume_percent / 100.0
-            
+
             with self._lock:
                 self.pulse.volume_set_all_chans(sink, volume_float)
-            
+
             return True
         except Exception as e:
             print(f"Error setting volume: {e}")
             return False
-    
+
     def volume_up(self):
         """Increase volume by step amount"""
         current = self.get_current_volume()
@@ -106,7 +106,7 @@ class VolumeController:
             new_volume = min(100, current['volume'] + self.step)
             return self.set_volume(new_volume)
         return False
-    
+
     def volume_down(self):
         """Decrease volume by step amount"""
         current = self.get_current_volume()
@@ -114,22 +114,22 @@ class VolumeController:
             new_volume = max(0, current['volume'] - self.step)
             return self.set_volume(new_volume)
         return False
-    
+
     def toggle_mute(self):
         """Toggle mute status"""
         try:
             sink = self.get_default_sink()
             if not sink:
                 return False
-            
+
             with self._lock:
                 self.pulse.mute(sink, not sink.mute)
-            
+
             return True
         except Exception as e:
             print(f"Error toggling mute: {e}")
             return False
-    
+
     def __del__(self):
         """Clean up PulseAudio connection"""
         if self.pulse:
@@ -187,7 +187,7 @@ def set_volume():
     data = request.get_json()
     if not data or 'volume' not in data:
         return jsonify({'success': False, 'error': 'Volume value required'}), 400
-    
+
     try:
         volume = int(data['volume'])
         success = volume_ctrl.set_volume(volume)
