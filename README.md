@@ -23,14 +23,16 @@ Save the Python Flask code as `app.py` in the main directory.
 ### 3. Create the HTML template
 Save the HTML template as `templates/index.html` in the templates folder.
 
-### 4. Install Flask
+### 4. Python setup
 ```bash
-pip install flask
+python3 -m venv .venv
+. .venv/bin/activate
+pip install flask pulsectl
 ```
 
 ### 5. Run the application
 ```bash
-python app.py
+python volume_control_app.py
 ```
 
 The server will start on port 5000 and be accessible from any device on your network.
